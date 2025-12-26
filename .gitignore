@@ -8,4 +8,4 @@ app-inspect-data
 *.iso
 
 # This folder is exposed to the guest, (700 - owner has full read, write, and execute access, while all other users (group and others) have no access at all)
-vm-exp/vm-data
+vm-exp/vm-data/Llama*
