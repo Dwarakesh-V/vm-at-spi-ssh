@@ -1,0 +1,1 @@
+qemu-img snapshot -l vm-at1.qcow2 # View list of snapshots
