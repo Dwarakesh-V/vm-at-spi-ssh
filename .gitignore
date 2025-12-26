@@ -1,2 +1,11 @@
+# Application inspection data
 app-inspect-data
+
+# Virtual disk
 *.qcow2
+
+# ISO file that has the OS for VM
+*.iso
+
+# This folder is exposed to the guest, (700 - owner has full read, write, and execute access, while all other users (group and others) have no access at all)
+vm-exp/vm-data

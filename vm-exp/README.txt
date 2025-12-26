@@ -1,0 +1,1 @@
+This folder is exposed to the guest, with chmod permission 700 - owner has full read, write, and execute access, while all other users (group and others) have no access at all
