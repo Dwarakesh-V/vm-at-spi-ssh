@@ -1,1 +1,0 @@
-qemu-img snapshot -c base vm-at1.qcow2  # Create snapshot for the current state

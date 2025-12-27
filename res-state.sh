@@ -1,1 +1,0 @@
-qemu-img snapshot -a base vm-at1.qcow2
