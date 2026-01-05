@@ -9,3 +9,6 @@ app-inspect-data
 
 # This folder is exposed to the guest, (700 - owner has full read, write, and execute access, while all other users (group and others) have no access at all)
 vm-exp/vm-data/Llama*
+
+# Python vm
+vm-exp/vm-data/base
