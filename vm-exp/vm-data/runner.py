@@ -4,7 +4,6 @@ import pyatspi
 import subprocess
 import time
 import re
-import json
 from typing import Optional, Dict, List, Any
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
@@ -421,7 +420,7 @@ Only output function calls, no explanations unless asked."""
 def main():
     """Entry point"""
     env_apps = ["qalculate-gtk", "xfce4-terminal", "python3", "gcc", "g++"]
-    model_path = "./Llama-3.2-3B-Instruct"
+    model_path = "Llama-3.2-3B-Instruct"
     
     controller = AISystemController(model_path, env_apps)
     controller.run()
