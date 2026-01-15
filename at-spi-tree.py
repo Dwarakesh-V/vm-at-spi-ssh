@@ -10,7 +10,11 @@ def list_applications():
     for i in range(desktop.childCount):
         try:
             app = desktop.getChildAtIndex(i)
-            print(f"  {i+1}. {app.name}")
+            try:
+                pid = app.get_process_id()
+                print(f"  {i+1}. {app.name} (PID: {pid})")
+            except:
+                print(f"  {i+1}. {app.name}")
         except:
             continue
     print()
@@ -23,11 +27,10 @@ def traverse_tree(accessible, depth=0, max_depth=50):
     interactive_elements = []
     
     try:
-        # Check if this element isaccessible
+        # Check if this element is accessible
         if is_visible_and_enabled(accessible):
-            info = get_element_info(accessible)
+            info = get_element_info(accessible, depth)
             if info:
-                info['depth'] = depth
                 interactive_elements.append(info)
         
         # Traverse children
@@ -44,22 +47,24 @@ def traverse_tree(accessible, depth=0, max_depth=50):
     
     return interactive_elements
 
-def get_element_info(accessible):
+def get_element_info(accessible, depth):
     """Extract relevant information from any SINGLE accessible element"""
     try:
         name = accessible.name or None
         if not name:
-            return
+            return None
         role = accessible.getRoleName()
         description = accessible.description or ""
         
         return {
             'name': name,
             'role': role,
-            'description': description
+            'description': description,
+            'depth': depth,
+            'accessible': accessible  # Store the actual accessible object
         }
     except Exception as e:
-        print(f"Exception {e} has occured")
+        print(f"Exception {e} has occurred")
         return None
 
 def is_visible_and_enabled(accessible):
@@ -92,97 +97,42 @@ def find_application_by_pid(pid, timeout=10):
 
     return None
 
-def scan_application(app_name=None):
-    """Scan for interactive elements in a specific application or all applications"""
+def find_application_by_name(app_name):
+    """Find an application in the accessibility tree by name"""
     desktop = pyatspi.Registry.getDesktop(0)
-    
-    print(f"Scanning accessibility tree...")
-    
-    all_elements = []
     
     for i in range(desktop.childCount):
         try:
             app = desktop.getChildAtIndex(i)
-            current_app_name = app.name
-            
-            # Filter by application name if specified
-            if app_name and app_name.lower() not in current_app_name.lower():
-                continue
-            
-            print(f"Application: {current_app_name}")
-            
-            elements = traverse_tree(app)
-            
-            if elements:
-                for elem in elements:
-                    indent = "  " * elem['depth']
-                    print(f"{indent}[{elem['role']}] {elem['name']}")
-                    if elem['description']:
-                        print(f"{indent}  Description: {elem['description']}")
-                
-                all_elements.extend(elements)
-            else:
-                print("No interactive elements found\n")
-            
-            print()
-            
-        except Exception:
+            if app_name.lower() in app.name.lower():
+                return app
+        except:
             continue
     
-    print(f"Total interactive elements found: {len(all_elements)}")
-    return all_elements
+    return None
 
+def scan(app):
+    """Scan for interactive elements in a specific application"""
+    print(f"Scanning accessibility tree for: {app.name}")
+    
+    elements = traverse_tree(app)
+    
+    if elements:
+        for elem in elements:
+            indent = "  " * elem['depth']
+            print(f"{indent}[{elem['role']}] {elem['name']}")
+            if elem['description']:
+                print(f"{indent}  Description: {elem['description']}")
+    else:
+        print("No interactive elements found\n")
+    
+    print(f"\nTotal interactive elements found: {len(elements)}")
+    return elements
 
-def scan_application_by_pid(target_pid):
-    """Scan for interactive elements in a specific application by PID"""
-    desktop = pyatspi.Registry.getDesktop(0)
-
-    print(f"Scanning accessibility tree...")
-
-    all_elements = []
-
-    for i in range(desktop.childCount):
-        try:
-            app = desktop.getChildAtIndex(i)
-
-            try:
-                app_pid = app.getApplication().get_process_id()
-            except Exception:
-                continue
-
-            # Filter by PID
-            if target_pid != app_pid:
-                continue
-
-            current_app_name = app.name
-            print(f"Application: {current_app_name}")
-
-            elements = traverse_tree(app)
-
-            if elements:
-                for elem in elements:
-                    indent = "  " * elem['depth']
-                    print(f"{indent}[{elem['role']}] {elem['name']}")
-                    if elem['description']:
-                        print(f"{indent}  Description: {elem['description']}")
-
-                all_elements.extend(elements)
-            else:
-                print("No interactive elements found\n")
-
-            print()
-
-        except Exception:
-            continue
-
-    print(f"Total interactive elements found: {len(all_elements)}")
-    return all_elements
-
-def open_and_scan_application(command, wait_time=3):
-    """Open an application using Popen and scan its accessibility tree"""
+def open_application(command, wait_time=3):
+    """Open an application using Popen"""
     print(f"Opening application: {command}")
     
-    process = None
     try:
         # Open the application
         process = subprocess.Popen(command.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -193,52 +143,194 @@ def open_and_scan_application(command, wait_time=3):
         
         # Try to find the application in the accessibility tree
         app = find_application_by_pid(process.pid)
-
         
-        if app:    
-            # Scan the application
-            elements = traverse_tree(app)
-            
-            if elements:
-                for elem in elements:
-                    indent = "  " * elem['depth']
-                    print(f"{indent}[{elem['role']}] {elem['name']}")
-                    if elem['description']:
-                        print(f"{indent}  Description: {elem['description']}")
-            else:
-                print("No interactive elements found in the application")
-            
-            print(f"Total interactive elements found: {len(elements)}")
-            return elements
+        if app:
+            print(f"Found application: {app.name}")
+            return app
         else:
-            print(f"Could not find application")
+            print(f"Could not find application in accessibility tree")
             print(f"\nCurrently available applications:")
             list_applications()
-            return []
+            return None
             
     except Exception as e:
         print(f"Error: {e}")
+        return None
+
+# ===== INTERACTION FUNCTIONS =====
+
+def perform_action(accessible, action_name="click"):
+    """Perform an action on an accessible element"""
+    try:
+        # Get the Action interface
+        action = accessible.queryAction()
+        
+        # Find and perform the action
+        for i in range(action.nActions):
+            if action_name.lower() in action.getName(i).lower():
+                action.doAction(i)
+                print(f"Performed action: {action.getName(i)}")
+                return True
+        
+        # If specific action not found, try default action (usually index 0)
+        if action.nActions > 0:
+            action.doAction(0)
+            print(f"Performed default action: {action.getName(0)}")
+            return True
+            
+        print("No actions available for this element")
+        return False
+    except NotImplementedError:
+        print(f"Element does not support actions")
+        return False
+    except Exception as e:
+        print(f"Error performing action: {e}")
+        return False
+
+def click_element(accessible):
+    """Click/activate an element"""
+    return perform_action(accessible, "click")
+
+def set_text(accessible, text):
+    """Set text in an editable text field"""
+    try:
+        editable_text = accessible.queryEditableText()
+        # Clear existing text
+        editable_text.deleteText(0, -1)
+        # Insert new text
+        editable_text.insertText(0, text, len(text))
+        print(f"Text set to: {text}")
+        return True
+    except NotImplementedError:
+        print("Element does not support text editing")
+        return False
+    except Exception as e:
+        print(f"Error setting text: {e}")
+        return False
+
+def get_text(accessible):
+    """Get text from a text element"""
+    try:
+        text = accessible.queryText()
+        return text.getText(0, -1)
+    except NotImplementedError:
+        return accessible.name
+    except Exception as e:
+        print(f"Error getting text: {e}")
+        return None
+
+def get_available_actions(accessible):
+    """List all available actions for an element"""
+    try:
+        action = accessible.queryAction()
+        actions = []
+        for i in range(action.nActions):
+            actions.append({
+                'index': i,
+                'name': action.getName(i),
+                'description': action.getDescription(i),
+                'keybinding': action.getKeyBinding(i)
+            })
+        return actions
+    except NotImplementedError:
+        return []
+    except Exception as e:
+        print(f"Error getting actions: {e}")
         return []
 
-def find_application_by_command(command_name):
-    """Find an application in the accessibility tree by command name"""
-    desktop = pyatspi.Registry.getDesktop(0)
+def interactive_mode(elements):
+    """Interactive mode to explore and interact with elements"""
+    if not elements:
+        print("No elements to interact with")
+        return
     
-    # Extract base command name (e.g., "gedit" from "/usr/bin/gedit")
-    base_cmd = command_name.split('/')[-1].split()[0]
-    
-    for i in range(desktop.childCount):
+    while True:
+        print("\n" + "="*60)
+        print("=== Interactive Mode ===")
+        print("="*60)
+        
+        # Show elements with indices
+        for i, elem in enumerate(elements):
+            indent = "  " * elem['depth']
+            print(f"{i}: {indent}[{elem['role']}] {elem['name']}")
+        
+        print("\n" + "-"*60)
+        print("Commands:")
+        print("  <number> - Show details for element")
+        print("  click <number> - Click/activate element")
+        print("  text <number> <text> - Set text in element")
+        print("  read <number> - Read text from element")
+        print("  actions <number> - Show available actions")
+        print("  q - Quit interactive mode")
+        print("-"*60)
+        
+        choice = input("\nEnter command: ").strip()
+        
+        if choice.lower() == 'q':
+            break
+        
+        parts = choice.split(maxsplit=1)
+        command = parts[0].lower()
+        
         try:
-            app = desktop.getChildAtIndex(i)
-            app_name = app.name.lower()
-            
-            # Check if the application name matches the command
-            if base_cmd.lower() in app_name or app_name in base_cmd.lower():
-                return app
-        except:
-            continue
-    
-    return None
+            if command == 'click':
+                idx = int(parts[1])
+                elem = elements[idx]
+                print(f"\nClicking: [{elem['role']}] {elem['name']}")
+                click_element(elem['accessible'])
+                
+            elif command == 'text':
+                args = parts[1].split(maxsplit=1)
+                idx = int(args[0])
+                text_value = args[1] if len(args) > 1 else ""
+                elem = elements[idx]
+                print(f"\nSetting text in: [{elem['role']}] {elem['name']}")
+                set_text(elem['accessible'], text_value)
+                
+            elif command == 'read':
+                idx = int(parts[1])
+                elem = elements[idx]
+                print(f"\nReading from: [{elem['role']}] {elem['name']}")
+                text = get_text(elem['accessible'])
+                print(f"Text: {text}")
+                
+            elif command == 'actions':
+                idx = int(parts[1])
+                elem = elements[idx]
+                print(f"\nAvailable actions for: [{elem['role']}] {elem['name']}")
+                actions = get_available_actions(elem['accessible'])
+                if actions:
+                    for action in actions:
+                        print(f"  - {action['name']}: {action['description']}")
+                        if action['keybinding']:
+                            print(f"    Keybinding: {action['keybinding']}")
+                else:
+                    print("  No actions available")
+                    
+            elif command.isdigit():
+                idx = int(command)
+                elem = elements[idx]
+                print(f"\nElement details:")
+                print(f"  Name: {elem['name']}")
+                print(f"  Role: {elem['role']}")
+                print(f"  Description: {elem['description']}")
+                print(f"  Depth: {elem['depth']}")
+                
+                # Show actions
+                actions = get_available_actions(elem['accessible'])
+                if actions:
+                    print(f"  Available actions:")
+                    for action in actions:
+                        print(f"    - {action['name']}")
+            else:
+                print("Invalid command")
+                
+        except IndexError:
+            print(f"Invalid element number. Valid range: 0-{len(elements)-1}")
+        except ValueError:
+            print("Invalid number format")
+        except Exception as e:
+            print(f"Error: {e}")
 
 if __name__ == "__main__":
     import argparse
@@ -248,44 +340,88 @@ if __name__ == "__main__":
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python3 atspi_scanner.py "xfce4-terminal"
-  python3 atspi_scanner.py --list
-  python3 atspi_scanner.py --scan firefox
+  # List running applications
+  python3 at-spi-tree.py --list
+  
+  # Open an application and scan it
+  python3 at-spi-tree.py --open "xfce4-terminal"
+  
+  # Find by name and scan
+  python3 at-spi-tree.py --name firefox
+  
+  # Find by PID and scan
+  python3 at-spi-tree.py --pid 1234
+  
+  # Interactive mode (add -i flag to any scan command)
+  python3 at-spi-tree.py --name gedit -i
         """
     )
     
-    parser.add_argument(
-        'command',
-        nargs='?',
-        help='Command to launch the application (e.g., gedit, firefox, gnome-calculator)'
-    )
     parser.add_argument(
         '--list',
         action='store_true',
         help='List all currently running applications'
     )
     parser.add_argument(
-        '--scan',
-        metavar='APP_NAME',
-        help='Scan an already running application by name'
+        '--open',
+        metavar='COMMAND',
+        help='Open an application with the given command'
     )
     parser.add_argument(
-        '--scan_by_pid',
-        metavar='APP_PID',
-        help='Scan an already running application by process ID'
+        '--name',
+        metavar='APP_NAME',
+        help='Find and scan an application by name'
+    )
+    parser.add_argument(
+        '--pid',
+        metavar='PID',
+        type=int,
+        help='Find and scan an application by process ID'
+    )
+    parser.add_argument(
+        '-i', '--interactive',
+        action='store_true',
+        help='Enter interactive mode after scanning'
     )
     
     args = parser.parse_args()
     
     if args.list:
         list_applications()
-    elif args.scan:
-        scan_application(args.scan)
-    elif args.scan_by_pid:
-        scan_application_by_pid(int(args.scan_by_pid))
-    elif args.command:
-        open_and_scan_application(args.command)
     else:
-        parser.print_help()
-        print("\n")
-        list_applications()
+        app = None
+        
+        # Find or open the application
+        if args.open:
+            app = open_application(args.open)
+        elif args.name:
+            print(f"Finding application: {args.name}")
+            app = find_application_by_name(args.name)
+            if app:
+                print(f"Found application: {app.name}\n")
+            else:
+                print(f"Application not found: {args.name}")
+                print("\nCurrently available applications:")
+                list_applications()
+        elif args.pid:
+            print(f"Finding application by PID: {args.pid}")
+            app = find_application_by_pid(args.pid)
+            if app:
+                print(f"Found application: {app.name}\n")
+            else:
+                print(f"Application not found with PID: {args.pid}")
+                print("\nCurrently available applications:")
+                list_applications()
+        else:
+            parser.print_help()
+            print("\n")
+            list_applications()
+            exit(0)
+        
+        # Scan the application if found
+        if app:
+            elements = scan(app)
+            
+            # Enter interactive mode if requested
+            if args.interactive and elements:
+                interactive_mode(elements)
