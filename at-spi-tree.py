@@ -19,7 +19,7 @@ def list_applications():
             continue
     print()
 
-def traverse_tree(accessible, depth=0, max_depth=50):
+def traverse_tree_interactive(accessible, depth=0, max_depth=50):
     """Recursively traverse the accessibility tree"""
     if depth > max_depth:
         return []
@@ -38,7 +38,7 @@ def traverse_tree(accessible, depth=0, max_depth=50):
             try:
                 child = accessible.getChildAtIndex(i)
                 if child:
-                    interactive_elements.extend(traverse_tree(child, depth + 1, max_depth))
+                    interactive_elements.extend(traverse_tree_interactive(child, depth + 1, max_depth))
             except:
                 continue
                 
@@ -46,6 +46,59 @@ def traverse_tree(accessible, depth=0, max_depth=50):
         pass
     
     return interactive_elements
+
+def traverse_tree_static(accessible, depth=0, max_depth=50):
+    """Recursively traverse the accessibility tree to get static/non-interactive elements"""
+    if depth > max_depth:
+        return []
+    
+    static_elements = []
+    
+    try:
+        # Try to query text interface directly
+        text_content = None
+        if hasattr(accessible, 'queryText'):
+            try:
+                text_iface = accessible.queryText()
+                if text_iface:
+                    text_content = text_iface.getText(0, -1)  # Get all text
+            except:
+                pass
+        
+        # If we got text content, store it
+        role = getattr(accessible, "role", None)
+        role_name = role.value_name if role else None
+        
+
+        if (
+            text_content and
+            text_content.strip() and
+            role_name not in ["ATSPI_ROLE_LABEL",
+                              "ATSPI_ROLE_MENU",
+                              "ATSPI_ROLE_MENU_ITEM",
+                              "ATSPI_ROLE_RADIO_MENU_ITEM",
+                              "ATSPI_ROLE_CHECK_MENU_ITEM",
+                              ]
+        ):
+            static_elements.append({
+                "role": role_name,
+                "text": text_content.strip(),
+                "depth": depth
+            })
+        
+        # Traverse children
+        for i in range(accessible.childCount):
+            try:
+                child = accessible.getChildAtIndex(i)
+                if child:
+                    static_elements.extend(traverse_tree_static(child, depth + 1, max_depth))
+            except:
+                continue
+                
+    except Exception as e:
+        pass
+    
+    return static_elements
 
 def get_element_info(accessible, depth):
     """Extract relevant information from any SINGLE accessible element"""
@@ -74,7 +127,7 @@ def is_visible_and_enabled(accessible):
         return (
             state.contains(pyatspi.STATE_VISIBLE) and
             state.contains(pyatspi.STATE_ENABLED) and
-            state.contains(pyatspi.STATE_SHOWING) and
+            state.contains(pyatspi.STATE_SHOWING) and 
             not state.contains(pyatspi.STATE_DEFUNCT)
         )
     except:
@@ -115,7 +168,7 @@ def scan(app):
     """Scan for interactive elements in a specific application"""
     print(f"Scanning accessibility tree for: {app.name}")
     
-    elements = traverse_tree(app)
+    elements = traverse_tree_interactive(app)
     
     if elements:
         for elem in elements:
@@ -127,6 +180,22 @@ def scan(app):
         print("No interactive elements found\n")
     
     print(f"\nTotal interactive elements found: {len(elements)}")
+    return elements
+
+def scan_static(app):
+    """Scan for static/text elements in a specific application"""
+    print(f"Scanning accessibility tree for static content: {app.name}")
+    
+    elements = traverse_tree_static(app)
+    
+    if elements:
+        for elem in elements:
+            indent = "  " * elem['depth']
+            print(f"{indent}[{elem['role']}] {elem['text'][:100]}...")  # Limit text preview
+    else:
+        print("No static elements found\n")
+    
+    print(f"\nTotal static elements found: {len(elements)}")
     return elements
 
 def open_application(command, wait_time=3):
@@ -157,7 +226,7 @@ def open_application(command, wait_time=3):
         print(f"Error: {e}")
         return None
 
-# ===== INTERACTION FUNCTIONS =====
+# Interactiveness
 
 def perform_action(accessible, action_name="click"):
     """Perform an action on an accessible element"""
@@ -245,9 +314,7 @@ def interactive_mode(elements):
         return
     
     while True:
-        print("\n" + "="*60)
-        print("=== Interactive Mode ===")
-        print("="*60)
+        print("--- Interactive Mode ---")
         
         # Show elements with indices
         for i, elem in enumerate(elements):
@@ -262,9 +329,9 @@ def interactive_mode(elements):
         print("  read <number> - Read text from element")
         print("  actions <number> - Show available actions")
         print("  q - Quit interactive mode")
-        print("-"*60)
+        print("-"*60+"\n")
         
-        choice = input("\nEnter command: ").strip()
+        choice = input("Enter command: ").strip()
         
         if choice.lower() == 'q':
             break
@@ -420,8 +487,9 @@ Examples:
         
         # Scan the application if found
         if app:
-            elements = scan(app)
+            elements_int = scan(app)
+            elements_stat = scan_static(app)
             
             # Enter interactive mode if requested
-            if args.interactive and elements:
-                interactive_mode(elements)
+            if args.interactive and elements_int:
+                interactive_mode(elements_int)
