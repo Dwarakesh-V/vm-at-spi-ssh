@@ -127,7 +127,7 @@ def is_visible_and_enabled(accessible):
         return (
             state.contains(pyatspi.STATE_VISIBLE) and
             state.contains(pyatspi.STATE_ENABLED) and
-            state.contains(pyatspi.STATE_SHOWING) and 
+            # state.contains(pyatspi.STATE_SHOWING) and 
             not state.contains(pyatspi.STATE_DEFUNCT)
         )
     except:
@@ -260,34 +260,6 @@ def click_element(accessible):
     """Click/activate an element"""
     return perform_action(accessible, "click")
 
-def set_text(accessible, text): # Change to keyboard text input for focused elements
-    """Set text in an editable text field"""
-    try:
-        editable_text = accessible.queryEditableText()
-        # Clear existing text
-        editable_text.deleteText(0, -1)
-        # Insert new text
-        editable_text.insertText(0, text, len(text))
-        print(f"Text set to: {text}")
-        return True
-    except NotImplementedError:
-        print("Element does not support text editing")
-        return False
-    except Exception as e:
-        print(f"Error setting text: {e}")
-        return False
-
-def get_text(accessible):
-    """Get text from a text element"""
-    try:
-        text = accessible.queryText()
-        return text.getText(0, -1)
-    except NotImplementedError:
-        return accessible.name
-    except Exception as e:
-        print(f"Error getting text: {e}")
-        return None
-
 def get_available_actions(accessible):
     """List all available actions for an element"""
     try:
@@ -323,17 +295,14 @@ def interactive_mode(elements):
         
         print("\n" + "-"*60)
         print("Commands:")
-        print("  <number> - Show details for element")
         print("  click <number> - Click/activate element")
-        print("  text <number> <text> - Set text in element")
-        print("  read <number> - Read text from element")
         print("  actions <number> - Show available actions")
-        print("  q - Quit interactive mode")
+        print("  end - Quit interactive mode")
         print("-"*60+"\n")
         
         choice = input("Enter command: ").strip()
         
-        if choice.lower() == 'q':
+        if choice.lower() == 'end':
             break
         
         parts = choice.split(maxsplit=1)
@@ -346,21 +315,6 @@ def interactive_mode(elements):
                 print(f"\nClicking: [{elem['role']}] {elem['name']}")
                 click_element(elem['accessible'])
                 
-            elif command == 'text':
-                args = parts[1].split(maxsplit=1)
-                idx = int(args[0])
-                text_value = args[1] if len(args) > 1 else ""
-                elem = elements[idx]
-                print(f"\nSetting text in: [{elem['role']}] {elem['name']}")
-                set_text(elem['accessible'], text_value)
-                
-            elif command == 'read':
-                idx = int(parts[1])
-                elem = elements[idx]
-                print(f"\nReading from: [{elem['role']}] {elem['name']}")
-                text = get_text(elem['accessible'])
-                print(f"Text: {text}")
-                
             elif command == 'actions':
                 idx = int(parts[1])
                 elem = elements[idx]
@@ -372,23 +326,7 @@ def interactive_mode(elements):
                         if action['keybinding']:
                             print(f"    Keybinding: {action['keybinding']}")
                 else:
-                    print("  No actions available")
-                    
-            elif command.isdigit():
-                idx = int(command)
-                elem = elements[idx]
-                print(f"\nElement details:")
-                print(f"  Name: {elem['name']}")
-                print(f"  Role: {elem['role']}")
-                print(f"  Description: {elem['description']}")
-                print(f"  Depth: {elem['depth']}")
-                
-                # Show actions
-                actions = get_available_actions(elem['accessible'])
-                if actions:
-                    print(f"  Available actions:")
-                    for action in actions:
-                        print(f"    - {action['name']}")
+                    print("  No actions available")           
             else:
                 print("Invalid command")
                 
