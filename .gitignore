@@ -16,3 +16,7 @@ vm-exp/vm-data/base
 
 # Python venv
 .venv
+
+# uinput build
+build
+uinput*
