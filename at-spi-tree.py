@@ -48,57 +48,57 @@ def traverse_tree_interactive(accessible, depth=0, max_depth=50):
     return interactive_elements
 
 def traverse_tree_static(accessible, depth=0, max_depth=50):
-    """Recursively traverse the accessibility tree to get static/non-interactive elements"""
     if depth > max_depth:
         return []
-    
+
     static_elements = []
-    
+
     try:
-        # Try to query text interface directly
         text_content = None
         if hasattr(accessible, 'queryText'):
             try:
                 text_iface = accessible.queryText()
                 if text_iface:
-                    text_content = text_iface.getText(0, -1)  # Get all text
+                    text_content = text_iface.getText(0, -1)
             except:
                 pass
-        
-        # If we got text content, store it
-        role = getattr(accessible, "role", None)
+
+        role = accessible.getRole()
         role_name = role.value_name if role else None
-        
 
         if (
             text_content and
             text_content.strip() and
-            role_name not in ["ATSPI_ROLE_LABEL",
-                              "ATSPI_ROLE_MENU",
-                              "ATSPI_ROLE_MENU_ITEM",
-                              "ATSPI_ROLE_RADIO_MENU_ITEM",
-                              "ATSPI_ROLE_CHECK_MENU_ITEM",
-                              ]
+            role_name not in [
+                "ATSPI_ROLE_LABEL",
+                "ATSPI_ROLE_MENU",
+                "ATSPI_ROLE_MENU_ITEM",
+                "ATSPI_ROLE_RADIO_MENU_ITEM",
+                "ATSPI_ROLE_CHECK_MENU_ITEM",
+            ]
         ):
             static_elements.append({
                 "role": role_name,
                 "text": text_content.strip(),
                 "depth": depth
             })
-        
+
         # Traverse children
         for i in range(accessible.childCount):
             try:
                 child = accessible.getChildAtIndex(i)
                 if child:
-                    static_elements.extend(traverse_tree_static(child, depth + 1, max_depth))
+                    static_elements.extend(
+                        traverse_tree_static(child, depth + 1, max_depth)
+                    )
             except:
                 continue
-                
-    except Exception as e:
+
+    except:
         pass
-    
+
     return static_elements
+
 
 def get_element_info(accessible, depth):
     """Extract relevant information from any SINGLE accessible element"""
@@ -260,7 +260,7 @@ def click_element(accessible):
     """Click/activate an element"""
     return perform_action(accessible, "click")
 
-def set_text(accessible, text):
+def set_text(accessible, text): # Change to keyboard text input for focused elements
     """Set text in an editable text field"""
     try:
         editable_text = accessible.queryEditableText()
@@ -489,6 +489,7 @@ Examples:
         if app:
             elements_int = scan(app)
             elements_stat = scan_static(app)
+            print(elements_int[0],elements_stat[0])
             
             # Enter interactive mode if requested
             if args.interactive and elements_int:
