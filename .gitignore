@@ -20,3 +20,6 @@ vm-exp/vm-data/base
 # uinput build
 build
 uinput_keyboard.egg-info
+
+# x11 build
+x11_keyboard.egg-info

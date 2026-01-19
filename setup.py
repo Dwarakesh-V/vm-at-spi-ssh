@@ -1,10 +1,22 @@
+# from setuptools import setup, Extension
+
+# module = Extension('uinput_keyboard',
+#                    sources=['uinput_keyboard.cpp'],
+#                    extra_compile_args=['-std=c++11'])
+
+# setup(name='uinput_keyboard',
+#       version='1.0',
+#       description='Linux uinput keyboard simulator',
+#       ext_modules=[module])
+
 from setuptools import setup, Extension
 
-module = Extension('uinput_keyboard',
-                   sources=['uinput_keyboard.cpp'],
+module = Extension('x11_keyboard',
+                   sources=['x11_keyboard.cpp'],
+                   libraries=['X11', 'Xtst'],
                    extra_compile_args=['-std=c++11'])
 
-setup(name='uinput_keyboard',
+setup(name='x11_keyboard',
       version='1.0',
-      description='Linux uinput keyboard simulator',
+      description='X11 keyboard simulator using XTest',
       ext_modules=[module])
