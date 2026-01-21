@@ -1,6 +1,8 @@
 import pyatspi
 import subprocess
 import time
+import x11_keyboard
+x11_keyboard.init()
 
 def list_applications():
     """List all available applications"""
@@ -296,6 +298,8 @@ def interactive_mode(elements):
         print("\n" + "-"*60)
         print("Commands:")
         print("  click <number> - Click/activate element")
+        print("  type_text <text> - Type text using virtual keyboard")
+        print("  press_combo <keys> (e.g., ctrl+c) - Press keys on virtual keyboard")
         print("  actions <number> - Show available actions")
         print("  end - Quit interactive mode")
         print("-"*60+"\n")
@@ -305,7 +309,7 @@ def interactive_mode(elements):
         if choice.lower() == 'end':
             break
         
-        parts = choice.split(maxsplit=1)
+        parts = choice.split()
         command = parts[0].lower()
         
         try:
@@ -314,6 +318,12 @@ def interactive_mode(elements):
                 elem = elements[idx]
                 print(f"\nClicking: [{elem['role']}] {elem['name']}")
                 click_element(elem['accessible'])
+
+            elif command == 'type_text':       
+                x11_keyboard.type_text(parts[1])
+            
+            elif command == 'press_combo':
+                x11_keyboard.press_combo(parts[1])
                 
             elif command == 'actions':
                 idx = int(parts[1])
@@ -432,3 +442,5 @@ Examples:
             # Enter interactive mode if requested
             if args.interactive and elements_int:
                 interactive_mode(elements_int)
+
+    x11_keyboard.cleanup()
