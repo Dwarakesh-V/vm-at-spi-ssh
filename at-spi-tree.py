@@ -437,7 +437,15 @@ Examples:
         if app:
             elements_int = scan(app)
             elements_stat = scan_static(app)
-            print(elements_int[0],elements_stat[0])
+            try:
+                print(elements_int[0],end=" ")
+            except IndexError:
+                print("No interactive elements found.")
+            
+            try:
+                print(elements_stat[0])
+            except IndexError:
+                print("No static elements found.")
             
             # Enter interactive mode if requested
             if args.interactive and elements_int:
