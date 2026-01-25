@@ -23,3 +23,6 @@ uinput_keyboard.egg-info
 
 # x11 build
 x11_keyboard.egg-info
+
+# Broken workflows documentation for reference
+broken-doc.md
