@@ -1,0 +1,1 @@
+Works only on x11 Linux environments and the Firefox browser, provided all system and python dependencies are correctly installed in the correct paths and are active and running.

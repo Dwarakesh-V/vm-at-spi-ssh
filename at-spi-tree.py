@@ -49,59 +49,6 @@ def traverse_tree_interactive(accessible, depth=0, max_depth=50):
     
     return interactive_elements
 
-def traverse_tree_static(accessible, depth=0, max_depth=50):
-    if depth > max_depth:
-        return []
-
-    static_elements = []
-
-    try:
-        text_content = None
-        if hasattr(accessible, 'queryText'):
-            try:
-                text_iface = accessible.queryText()
-                if text_iface:
-                    text_content = text_iface.getText(0, -1)
-            except:
-                pass
-
-        role = accessible.getRole()
-        role_name = role.value_name if role else None
-
-        if (
-            text_content and
-            text_content.strip() and
-            role_name not in [
-                "ATSPI_ROLE_LABEL",
-                "ATSPI_ROLE_MENU",
-                "ATSPI_ROLE_MENU_ITEM",
-                "ATSPI_ROLE_RADIO_MENU_ITEM",
-                "ATSPI_ROLE_CHECK_MENU_ITEM",
-            ]
-        ):
-            static_elements.append({
-                "role": role_name,
-                "text": text_content.strip(),
-                "depth": depth
-            })
-
-        # Traverse children
-        for i in range(accessible.childCount):
-            try:
-                child = accessible.getChildAtIndex(i)
-                if child:
-                    static_elements.extend(
-                        traverse_tree_static(child, depth + 1, max_depth)
-                    )
-            except:
-                continue
-
-    except:
-        pass
-
-    return static_elements
-
-
 def get_element_info(accessible, depth):
     """Extract relevant information from any SINGLE accessible element"""
     try:
@@ -129,7 +76,7 @@ def is_visible_and_enabled(accessible):
         return (
             state.contains(pyatspi.STATE_VISIBLE) and
             state.contains(pyatspi.STATE_ENABLED) and
-            # state.contains(pyatspi.STATE_SHOWING) and 
+            state.contains(pyatspi.STATE_SHOWING) and 
             not state.contains(pyatspi.STATE_DEFUNCT)
         )
     except:
@@ -182,22 +129,6 @@ def scan(app):
         print("No interactive elements found\n")
     
     print(f"\nTotal interactive elements found: {len(elements)}")
-    return elements
-
-def scan_static(app):
-    """Scan for static/text elements in a specific application"""
-    print(f"Scanning accessibility tree for static content: {app.name}")
-    
-    elements = traverse_tree_static(app)
-    
-    if elements:
-        for elem in elements:
-            indent = "  " * elem['depth']
-            print(f"{indent}[{elem['role']}] {elem['text'][:100]}...")  # Limit text preview
-    else:
-        print("No static elements found\n")
-    
-    print(f"\nTotal static elements found: {len(elements)}")
     return elements
 
 def open_application(command, wait_time=3):
@@ -436,16 +367,10 @@ Examples:
         # Scan the application if found
         if app:
             elements_int = scan(app)
-            elements_stat = scan_static(app)
             try:
                 print(elements_int[0],end=" ")
             except IndexError:
                 print("No interactive elements found.")
-            
-            try:
-                print(elements_stat[0])
-            except IndexError:
-                print("No static elements found.")
             
             # Enter interactive mode if requested
             if args.interactive and elements_int:
