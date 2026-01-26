@@ -251,4 +251,6 @@ That layer does not exist as a usable tool.
 
 This builds it.
 
-Works only on X11 desktop environments and the firefox browser, provided all dependencies are correctly installed.
+Works only on X11 desktop environments and the firefox browser, provided all dependencies are correctly installed. Change env.json for your environment variables. These are applications that the AI model is allowed to access.
+
+WARNING: This relies on a text generation AI model that is fragile by nature. Use at your own risk.

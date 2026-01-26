@@ -7,22 +7,30 @@ import time
 import x11_keyboard
 x11_keyboard.init()
 
-def list_applications():
+def list_applications(disp_res=True):
     """List all available applications"""
     desktop = pyatspi.Registry.getDesktop(0)
-    print("Available applications:")
-    
+    if disp_res:
+        print("Available applications:")
+    applications = []
+
     for i in range(desktop.childCount):
         try:
             app = desktop.getChildAtIndex(i)
             try:
                 pid = app.get_process_id()
-                print(f"  {i+1}. {app.name} (PID: {pid})")
+                if disp_res:
+                    print(f"  {i+1}. {app.name} (PID: {pid})")
+                applications.append({"name":app.name,"pid":pid})
             except:
-                print(f"  {i+1}. {app.name}")
+                if disp_res:
+                    print(f"  {i+1}. {app.name}")
+                applications.append({"name":app.name,"pid":None})
         except:
             continue
-    print()
+    if disp_res:
+        print()
+    return applications
 
 def traverse_tree_interactive(accessible, depth=0, max_depth=50):
     """Recursively traverse the accessibility tree"""
