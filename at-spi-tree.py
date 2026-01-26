@@ -1,3 +1,6 @@
+# sudo apt install python3-gi gir1.2-atspi-2.0 at-spi2-core
+# python3/python/py -m venv .venv --system-site-packages
+
 import pyatspi
 import subprocess
 import time

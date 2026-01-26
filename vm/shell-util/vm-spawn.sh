@@ -23,7 +23,8 @@ qemu-system-x86_64 \
   -device virtio-net-pci,netdev=net0 \
   -device virtio-blk-pci,drive=drive0 \
   -device virtio-gpu-pci \
-  -fsdev local,id=fsdev0,path=./vm-exp/vm-data,security_model=none \
-  -device virtio-9p-pci,fsdev=fsdev0,mount_tag=shared \
+  -chardev socket,id=ch0,path=/tmp/vm-channel.sock,server=on,wait=off \
+  -device virtio-serial \
+  -device virtserialport,chardev=ch0,name=host.guest.0 \
   -monitor stdio \
   -display gtk
