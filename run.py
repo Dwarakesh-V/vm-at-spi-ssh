@@ -16,12 +16,12 @@ print(filtered_apps)
 
 """
 What the AI can do:
-open <env_app> - Open an app that if it is there in the list of environment variables
+open <app> - Open an app that if it is there in the list of environment variables
 view - Show running apps
+focus <pid> - Focus on window with pid
 request <pid> - Get accessible data of process with pid
 click <pid> <number> - Click on element of the app with pid at the given number
 rclick <pid> <number> - Right click on element of the app with pid at the given number
 press <key-combo> - Press keys in combination (ctrl+c, shift+h, enter)
 type <text> - Type text
 """
-        

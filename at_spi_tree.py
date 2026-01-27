@@ -5,6 +5,8 @@ import pyatspi
 import subprocess
 import time
 import x11_keyboard
+from pytoony import json2toon
+import json
 x11_keyboard.init()
 
 def list_applications(disp_res=True):
@@ -130,17 +132,22 @@ def scan(app):
     
     elements = traverse_tree_interactive(app)
     
+    sdata=""
     if elements:
         for elem in elements:
             indent = "  " * elem['depth']
-            print(f"{indent}[{elem['role']}] {elem['name']}")
+            ls=f"{indent}{elem['role']}-{elem['name']}"
+            sdata+=ls+"\n"
+            print(ls)
             if elem['description']:
-                print(f"{indent}  Description: {elem['description']}")
+                lsd=f"{indent}  Description: {elem['description']}"
+                print(lsd)
+                sdata+=lsd+"\n"
     else:
         print("No interactive elements found\n")
     
     print(f"\nTotal interactive elements found: {len(elements)}")
-    return elements
+    return [elements,sdata]
 
 def open_application(command, wait_time=3):
     """Open an application using Popen"""
@@ -377,9 +384,18 @@ Examples:
         
         # Scan the application if found
         if app:
-            elements_int = scan(app)
+            scan_data=scan(app)
+            elements_int = scan_data[0]
+            pdata=scan_data[1]
             try:
-                print(elements_int[0],end=" ")
+                nw = []
+                for i in elements_int:
+                    nw.append({"name":i["name"], "role":i["role"],"description":i["description"],"depth":i["depth"]})
+
+                # print(json2toon(json.dumps(simplify_accessibility_tree(nw))))
+                # print(nw)
+                print("Start pdata:\n\n",pdata,type(pdata))
+
             except IndexError:
                 print("No interactive elements found.")
             
