@@ -27,6 +27,23 @@ def focus_window_by_pid(pid: int) -> None:
             stderr=subprocess.STDOUT,
             text=True
         )
+    
+def get_focused_window_pid():
+    try:
+        wid = subprocess.check_output(
+            ["xdotool", "getwindowfocus"],
+            stderr=subprocess.DEVNULL
+        ).strip()
+
+        pid = subprocess.check_output(
+            ["xdotool", "getwindowpid", wid],
+            stderr=subprocess.DEVNULL
+        ).strip()
+
+        return int(pid)
+
+    except subprocess.CalledProcessError:
+        return None
 
 def list_applications(disp_res=True):
     """List all available applications"""
@@ -52,6 +69,36 @@ def list_applications(disp_res=True):
     if disp_res:
         print()
     return applications
+
+def filter_applications(applications):
+    filtered_apps = []
+
+    with open("env.json") as f:
+        allowed_applications = json.load(f)
+
+    applications = list_applications(False)
+    for app in applications:
+        if app["name"] in allowed_applications["apps"]:
+            filtered_apps.append({"name":app["name"],"pid":app["pid"]})
+
+    apps = ""
+    for app_data in filtered_apps:
+        apps+= f"{app_data['name']}-{app_data['pid']}\n"
+
+    return apps
+
+def run_terminal_command(command):
+    result = subprocess.run(
+        command,
+        shell=True,
+        capture_output=True,
+        text=True
+    )
+
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr.strip())
+
+    return result.stdout.strip()
 
 def traverse_tree_interactive(accessible, depth=0, max_depth=50):
     """Recursively traverse the accessibility tree"""
@@ -177,28 +224,23 @@ def open_application(command, wait_time=3):
     """Open an application using Popen"""
     print(f"Opening application: {command}")
     
-    try:
-        # Open the application
-        process = subprocess.Popen(command.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        
-        print(f"Application started (PID: {process.pid})")
-        print(f"Waiting for application to initialize...\n")
-        time.sleep(wait_time)
-        
-        # Try to find the application in the accessibility tree
-        app = find_application_by_pid(process.pid)
-        
-        if app:
-            print(f"Found application: {app.name}")
-            return (app,process.pid)
-        else:
-            print(f"Could not find application in accessibility tree")
-            print(f"\nCurrently available applications:")
-            list_applications()
-            return None
-            
-    except Exception as e:
-        print(f"Error: {e}")
+    # Open the application
+    process = subprocess.Popen(command.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    
+    print(f"Application started (PID: {process.pid})")
+    print(f"Waiting for application to initialize...\n")
+    time.sleep(wait_time)
+    
+    # Try to find the application in the accessibility tree
+    app = find_application_by_pid(process.pid)
+    
+    if app:
+        print(f"Found application: {app.name}")
+        return process.pid
+    else:
+        print(f"Could not find application in accessibility tree")
+        print(f"\nCurrently available applications:")
+        list_applications()
         return None
 
 # Interactiveness
@@ -381,7 +423,8 @@ Examples:
         
         # Find or open the application
         if args.open:
-            app = open_application(args.open)[0]
+            app_pid = open_application(args.open)
+            app = find_application_by_pid(app_pid)
         elif args.name:
             print(f"Finding application: {args.name}")
             app = find_application_by_name(args.name)

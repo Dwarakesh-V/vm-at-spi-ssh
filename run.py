@@ -2,36 +2,16 @@
 from at_spi_tree import *
 from focus_listener import get_current_focus_state
 from para_maker import at_pm
-from llama_gen import generate_response
 
 # Custom imports - CPP modules
 import x11_mouse
 import x11_keyboard
 
-# Built-in imports
-import json
-
 # Downloaded imports
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
-filtered_apps = []
-
-with open("env.json") as f:
-    allowed_applications = json.load(f)
-
-applications = list_applications(False)
-for app in applications:
-    if app["name"] in allowed_applications["apps"]:
-        filtered_apps.append({"name":app["name"],"pid":app["pid"]})
-
-apps = ""
-for app_data in filtered_apps:
-    apps+= f"{app_data['name']}-{app_data['pid']}\n"
-
-print(apps)
-
-def generate_model_response(model,messages):
+def generate_model_response(model,tokenizer,messages):
     """Generate a response from the model"""
     # Apply chat template
     prompt = tokenizer.apply_chat_template(
@@ -58,106 +38,165 @@ def generate_model_response(model,messages):
         skip_special_tokens=True
     )
     
+    # print(response)
     return response
 
-def interact(model,messages,prev=None):
+def interact(model,tokenizer,messages):
     """Interactive mode to explore and interact with elements"""
     
     while True:
-        choice = generate_response(model,messages)
+        print("\n\n\n\nMS\n\n\n",messages,"\n\n\n\nMS\n\n\n")
+        choice = generate_model_response(model,tokenizer,messages)
         if choice=="end":
             break
-        parts = choice.split(maxsplit=2)
+        parts = choice.split(maxsplit=1)
         command = parts[0].lower()
 
-        # Not useful when command is open/request/end which case these variables are overridden
-        app_id = int(parts[1])
+        app_id = get_focused_window_pid()
         my_app = find_application_by_pid(app_id)
-        elements = traverse_tree_interactive(my_app) # This is done repeatedly to ensure that UI update changes are reflected
+        elements = traverse_tree_interactive(my_app) # This is done repeatedly to ensure that UI update changes are reflected, and indexing errors are avoided
 
         try:
+            print(f"Messages: {messages}")
+            if command == "env": # VIEW ENVIRONMENTAL APPS
+                with open("env.json") as f:
+                    allowed_applications = json.load(f)
+
+                res=""
+                for app in allowed_applications["apps"]:
+                    res+=app+"\n"
+                print(res)
+                messages.insert(-2,{
+                    "role": "assistant",
+                    "content": res
+                })
+
+            elif command == "view": # VIEW APPLICATIONS
+                print(f"view:\n{filter_applications(list_applications(False))}")
+                messages.insert(-2,{
+                    "role": "assistant",
+                    "content": f"view:\n{filter_applications(list_applications(False))}"
+                })
+
+            elif command == "open": # OPEN AN APPLICATION
+                app_pid=open_application(parts[1])
+                focus_window_by_pid(app_pid)
+
+            elif command == "run": # RUN TERMINAL COMMAND AND RETRIEVE OUTPUT
+                output = run_terminal_command(parts[1])
+                messages.pop()
+                messages.pop()
+                messages.append({
+                    "role": "system",
+                    "content": at_pm(elements)
+                })
+                messages.append({
+                    "role": "system",
+                    "content": get_current_focus_state()
+                })
+                messages.insert(-2,{
+                    "role": "user",
+                    "content": f"Command output\n{output}"
+                })
+
+            elif command == "focus": # FOCUS ON APPLICATION
+                idx=int(parts[1])
+                focus_window_by_pid(idx)
+
+            elif command == "request":
+                user_input = input(parts[1])
+                messages.insert(-2,{
+                    "role": "user",
+                    "content": f"From user: {user_input}"
+                })
+
             # Mouse actions
-            if command == "click":
-                idx = int(parts[2])
+            elif command == "click": # LEFT CLICK
+                idx = int(parts[1])
                 elem = elements[idx]
                 print(f"\nClicking: [{elem['role']}] {elem['name']}")
                 x11_mouse.move_human(elem['location'][0],elem['location'][1])
                 x11_mouse.click()
-                messages[1] = {
+                messages.pop()
+                messages.pop()
+                messages.append({
                     "role": "system",
                     "content": at_pm(elements)
-                }
-                messages[2] = {
+                })
+                messages.append({
                     "role": "system",
                     "content": get_current_focus_state()
-                }
-                messages.append({
+                })
+                messages.insert(-2,{
                     "role": "assistant",
-                    "content": choice
+                    "content": f"{command} [{elem['role']}-{elem['name']}]"
                 })
 
-            elif command == "rclick":
-                idx = int(parts[2])
+            elif command == "rclick": # RIGHT CLICK
+                idx = int(parts[1])
                 elem = elements[idx]
                 print(f"\nRight clicking: [{elem['role']}] {elem['name']}")
                 x11_mouse.move_human(elem['location'][0],elem['location'][1])
                 x11_mouse.right_click()
-                messages[1] = {
+                messages.pop()
+                messages.pop()
+                messages.append({
                     "role": "system",
                     "content": at_pm(elements)
-                }
-                messages[2] = {
+                })
+                messages.append({
                     "role": "system",
                     "content": get_current_focus_state()
-                }
-                messages.append({
+                })
+                messages.insert(-2,{
                     "role": "assistant",
                     "content": choice
                 })
 
             # Keyboard actions
-            if command == "press":
-                x11_keyboard.press_combo(parts[2]) # parts[2] is the key combo here
-                messages[1] = {
+            elif command == "press": # KEY PRESS
+                x11_keyboard.press_combo(parts[1]) # parts[1] is the key combo here
+                messages.pop()
+                messages.pop()
+                messages.append({
                     "role": "system",
                     "content": at_pm(elements)
-                }
-                messages[2] = {
+                })
+                messages.append({
                     "role": "system",
                     "content": get_current_focus_state()
-                }
-                messages.append({
+                })
+                messages.insert(-2,{
                     "role": "assistant",
-                    "content": choice
+                    "content": f"{command} {parts[1]}"
                 })
 
-            elif command == 'type_text':       
-                x11_keyboard.type_text(parts[2]) # parts[2] is the text to be typed here
-                messages[1] = {
+            elif command == 'type': # TYPE TEXT
+                x11_keyboard.type_text(parts[1]) # parts[2] is the text to be typed here
+                messages.pop()
+                messages.pop()
+                messages.append({
                     "role": "system",
                     "content": at_pm(elements)
-                }
-                messages[2] = {
+                })
+                messages.append({
                     "role": "system",
                     "content": get_current_focus_state()
-                }
-                messages.append({
-                    "role": "assistant",
-                    "content": choice
                 })
-                
-            elif command == 'open':
-                app,pid=open_application(parts[1])
-                        
+                messages.insert(-2,{
+                    "role": "assistant",
+                    "content": f"{command} {parts[1]}"
+                })
+               
             else:
-                print("Invalid command")
+                print(f"Command {command} is invalid")
                 
-        except IndexError:
-            print(f"Invalid element number. Valid range: 0-{len(elements)-1}")
-        except ValueError:
-            print("Invalid number format")
-        except Exception as e:
-            print(f"Error: {e}")
+        except Exception as e: # Pass error messsage back to model for verification
+            messages.insert(-2,{
+                "role": "system",
+                "content": f"Error: {e}"
+            })
+            print(f"Error: {e} Fix your error before proceeding")
 
 model_path = "./Llama-3.2-3B-Instruct"
 tokenizer = AutoTokenizer.from_pretrained(model_path)
@@ -168,4 +207,21 @@ model = AutoModelForCausalLM.from_pretrained(
 )
 
 # IMPORTANT: messages[0] contains base prompt, messages[-2] contains currently focused application tree data, messages[-1] contains the focus, the messages in between contain model actions
-messages = {}
+messages = []
+with open("model_prompt.txt") as f:
+    base_prompt = f.read()
+command = input("Enter your command: ")
+messages.append({
+    "role": "system",
+    "content": base_prompt+"\n\nTask: "+command
+    })
+messages.append({
+    "role": "assistant",
+    "content": "None currently"
+})
+messages.append({
+    "role": "assistant",
+    "content": "None currently"
+})
+print("\n\n")
+interact(model,tokenizer,messages)
