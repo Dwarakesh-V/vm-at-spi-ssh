@@ -7,6 +7,7 @@ import time
 import x11_keyboard
 from pytoony import json2toon
 import json
+from para_maker import at_pm
 x11_keyboard.init()
 
 def focus_window_by_pid(pid: int) -> None:
@@ -99,7 +100,7 @@ def get_element_info(accessible, depth):
             'role': role,
             'description': description,
             'depth': depth,
-            'accessible': location  # Store location + 5px offset
+            'location': location  # Store location + 5px offset
         }
     except Exception as e:
         print(f"Exception {e} has occurred")
@@ -189,7 +190,7 @@ def open_application(command, wait_time=3):
         
         if app:
             print(f"Found application: {app.name}")
-            return app
+            return (app,process.pid)
         else:
             print(f"Could not find application in accessibility tree")
             print(f"\nCurrently available applications:")
@@ -380,7 +381,7 @@ Examples:
         
         # Find or open the application
         if args.open:
-            app = open_application(args.open)
+            app = open_application(args.open)[0]
         elif args.name:
             print(f"Finding application: {args.name}")
             app = find_application_by_name(args.name)
@@ -407,17 +408,18 @@ Examples:
         
         # Scan the application if found
         if app:
-            scan_data=scan(app)
-            elements_int = scan_data[0]
-            pdata=scan_data[1]
+            # scan_data=scan(app)
+            # elements_int = scan_data[0]
+            # pdata=scan_data[1]
+            elements_int = traverse_tree_interactive(app)
             try:
                 nw = []
                 for i in elements_int:
                     nw.append({"name":i["name"], "role":i["role"],"description":i["description"],"depth":i["depth"]})
 
                 # print(json2toon(json.dumps(simplify_accessibility_tree(nw))))
-                # print(nw)
-                print("Start pdata:\n\n",pdata,type(pdata))
+                print(at_pm(nw))
+                # print("Start pdata:\n\n",pdata,type(pdata))
 
             except IndexError:
                 print("No interactive elements found.")
