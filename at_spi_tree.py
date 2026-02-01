@@ -9,6 +9,24 @@ from pytoony import json2toon
 import json
 x11_keyboard.init()
 
+def focus_window_by_pid(pid: int) -> None:
+    search = subprocess.run(
+        ["xdotool", "search", "--pid", str(pid)],
+        capture_output=True,
+        text=True
+    )
+
+    if search.returncode != 0 or not search.stdout.strip():
+        return
+
+    for wid in search.stdout.split():
+        subprocess.run(
+            ["xdotool", "windowactivate", wid],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True
+        )
+
 def list_applications(disp_res=True):
     """List all available applications"""
     desktop = pyatspi.Registry.getDesktop(0)
@@ -71,12 +89,17 @@ def get_element_info(accessible, depth):
         role = accessible.getRoleName()
         description = accessible.description or ""
         
+        # Get the location of the accessible element
+        component = accessible.queryComponent()
+        extents = component.getExtents(0)  # 0 for screen coordinates
+        location = (extents.x + 5, extents.y + 5)
+        
         return {
             'name': name,
             'role': role,
             'description': description,
             'depth': depth,
-            'accessible': accessible  # Store the actual accessible object
+            'accessible': location  # Store location + 5px offset
         }
     except Exception as e:
         print(f"Exception {e} has occurred")
@@ -242,7 +265,7 @@ def interactive_mode(elements):
         # Show elements with indices
         for i, elem in enumerate(elements):
             indent = "  " * elem['depth']
-            print(f"{i}: {indent}[{elem['role']}] {elem['name']}")
+            print(f"{i}: {indent}{elem['role']}-{elem['name']}")
         
         print("\n" + "-"*60)
         print("Commands:")

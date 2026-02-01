@@ -12,11 +12,21 @@ for app in applications:
     if app["name"] in allowed_applications["apps"]:
         filtered_apps.append({"name":app["name"],"pid":app["pid"]})
 
-print(filtered_apps)
+apps = ""
+for app_data in filtered_apps:
+    apps+= f"{app_data['name']}-{app_data['pid']}\n"
+
+print(apps)
+
+def parse_input(gen):
+    gen=gen.split()
+    
+
+# focus_window_by_pid(47182)
 
 """
 What the AI can do:
-open <app> - Open an app that if it is there in the list of environment variables
+open <app> - Open an app if it is there in the list of environment variables - Creates a new app with a new pid
 view - Show running apps
 focus <pid> - Focus on window with pid
 request <pid> - Get accessible data of process with pid
