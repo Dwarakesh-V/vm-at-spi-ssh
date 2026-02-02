@@ -220,7 +220,7 @@ def scan(app):
     print(f"\nTotal interactive elements found: {len(elements)}")
     return [elements,sdata]
 
-def open_application(command, wait_time=3):
+def open_application(command, wait_time=1):
     """Open an application using Popen"""
     print(f"Opening application: {command}")
     
@@ -234,14 +234,7 @@ def open_application(command, wait_time=3):
     # Try to find the application in the accessibility tree
     app = find_application_by_pid(process.pid)
     
-    if app:
-        print(f"Found application: {app.name}")
-        return process.pid
-    else:
-        print(f"Could not find application in accessibility tree")
-        print(f"\nCurrently available applications:")
-        list_applications()
-        return None
+    return process.pid
 
 # Interactiveness
 
