@@ -20,7 +20,7 @@ Allowed actions (output EXACTLY one line):
 * rclick <number> — right-click the UI element with this number
 * press <key-combo> — press keyboard keys (examples: enter, ctrl+c, ctrl+tab)
 * type <text> — type text exactly as given
-* end <message> — use only when the task is fully completed, after sending message to user
+* end <message> — use only when the task is fully completed, and send message to user
 
 Critical rules:
 
