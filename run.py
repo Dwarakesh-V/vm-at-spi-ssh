@@ -9,7 +9,7 @@ import x11_keyboard
 
 # Downloaded imports
 import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 
 def generate_model_response(model,tokenizer,messages):
     """Generate a response from the model"""
@@ -29,7 +29,7 @@ def generate_model_response(model,tokenizer,messages):
         **inputs,
         max_new_tokens=128,
         do_sample=True,          # Enable sampling
-        temperature=0.4,         # Add randomness
+        temperature=0.2,         # Add randomness
         top_p=0.9,              # Nucleus sampling
         pad_token_id=tokenizer.eos_token_id
     )
@@ -57,6 +57,16 @@ def interact(model,tokenizer,messages):
         my_app = find_application_by_pid(app_id)
         elements = traverse_tree_interactive(my_app) # This is done repeatedly to ensure that UI update changes are reflected, and indexing errors are avoided
 
+        messages[1]={
+            "role": "system",
+            "content": at_pm(elements)
+        }
+        messages[2]={
+            "role": "system",
+            "content": get_current_focus_state()
+        }
+
+        print(f"\n\nmessages:\n\n{messages[1]},\n{messages[2]}\n\n-----")
         try:
             if command == "env": # VIEW ENVIRONMENTAL APPS
                 with open("env.json") as f:
@@ -87,14 +97,6 @@ def interact(model,tokenizer,messages):
 
             elif command == "run": # RUN TERMINAL COMMAND AND RETRIEVE OUTPUT
                 output = run_terminal_command(parts[1])
-                messages[1]={
-                    "role": "system",
-                    "content": at_pm(elements)
-                }
-                messages[2]={
-                    "role": "system",
-                    "content": get_current_focus_state()
-                }
                 messages.append({
                     "role": "user",
                     "content": f"Command output\n{output}"
@@ -109,7 +111,7 @@ def interact(model,tokenizer,messages):
                 })
 
             elif command == "request":
-                user_input = input("From model: "+parts[1])
+                user_input = input("From model: "+parts[1]+": ")
                 messages.append({
                     "role": "user",
                     "content": f"From user: {user_input}"
@@ -122,14 +124,6 @@ def interact(model,tokenizer,messages):
                 print(f"\nClicking: [{elem['role']}] {elem['name']}")
                 x11_mouse.move_human(elem['location'][0],elem['location'][1])
                 x11_mouse.click()
-                messages[1]={
-                    "role": "system",
-                    "content": at_pm(elements)
-                }
-                messages[2]={
-                    "role": "system",
-                    "content": get_current_focus_state()
-                }
                 messages.append({
                     "role": "assistant",
                     "content": f"{command} [{elem['role']}-{elem['name']}]"
@@ -141,14 +135,6 @@ def interact(model,tokenizer,messages):
                 print(f"\nRight clicking: [{elem['role']}] {elem['name']}")
                 x11_mouse.move_human(elem['location'][0],elem['location'][1])
                 x11_mouse.right_click()
-                messages[1]={
-                    "role": "system",
-                    "content": at_pm(elements)
-                }
-                messages[2]={
-                    "role": "system",
-                    "content": get_current_focus_state()
-                }
                 messages.append({
                     "role": "assistant",
                     "content": choice
@@ -157,14 +143,6 @@ def interact(model,tokenizer,messages):
             # Keyboard actions
             elif command == "press": # KEY PRESS
                 x11_keyboard.press_combo(parts[1]) # parts[1] is the key combo here
-                messages[1]={
-                    "role": "system",
-                    "content": at_pm(elements)
-                }
-                messages[2]={
-                    "role": "system",
-                    "content": get_current_focus_state()
-                }
                 messages.append({
                     "role": "assistant",
                     "content": f"{command} {parts[1]}"
@@ -172,14 +150,6 @@ def interact(model,tokenizer,messages):
 
             elif command == 'type': # TYPE TEXT
                 x11_keyboard.type_text(parts[1]) # parts[1] is the text to be typed here
-                messages[1]={
-                    "role": "system",
-                    "content": at_pm(elements)
-                }
-                messages[2]={
-                    "role": "system",
-                    "content": get_current_focus_state()
-                }
                 messages.append({
                     "role": "assistant",
                     "content": f"{command} {parts[1]}"
@@ -198,13 +168,25 @@ def interact(model,tokenizer,messages):
                         f"If you tried to open an app, first use 'env' to see available apps."
             })
 
-model_path = "./Llama-3.2-3B-Instruct"
+model_path = "./Phi-3-mini-4k-instruct"
+
+# Define the quantization configuration
+quant_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_use_double_quant=True,
+    bnb_4bit_quant_type="nf4",
+    bnb_4bit_compute_dtype=torch.bfloat16
+)
+
+print("Loading quantized model and tokenizer...")
 tokenizer = AutoTokenizer.from_pretrained(model_path)
+
 model = AutoModelForCausalLM.from_pretrained(
     model_path,
-    dtype=torch.bfloat16,
+    # quantization_config=quant_config, # Pass the config here
     device_map="auto",
 )
+print("Model loaded successfully in 4-bit\n")
 
 # IMPORTANT: messages[0] contains base prompt, messages[-2] contains currently focused application tree data, messages[-1] contains the focus, the messages in between contain model actions
 messages = []

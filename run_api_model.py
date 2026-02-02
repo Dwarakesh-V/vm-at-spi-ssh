@@ -15,13 +15,12 @@ import json
 import google.generativeai as genai
 
 # Gemini setup
-genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+genai.configure(api_key=os.environ["WEB_SCRAPE_PARSE_GEMKEY"])
 
 model = genai.GenerativeModel(
     model_name="gemini-2.5-flash",
     generation_config={
-        "temperature": 0.4,
-        "top_p": 0.9,
+        "temperature": 0,
         "max_output_tokens": 128,
     }
 )
@@ -65,8 +64,9 @@ def interact(model, messages):
     """Interactive mode to explore and interact with elements"""
 
     while True:
+        print("messagevar\n\n\n",messages[1],messages[2],"\n\n\nendmessage")
         choice = generate_model_response(model, messages)
-
+        # choice = "focus 10760"
         parts = choice.split(maxsplit=1)
         command = parts[0].lower()
 
@@ -77,6 +77,15 @@ def interact(model, messages):
         my_app = find_application_by_pid(app_id)
         elements = traverse_tree_interactive(my_app)
 
+        messages[1] = {
+            "role": "system",
+            "content": at_pm(elements)
+        }
+        messages[2] = {
+            "role": "system",
+            "content": get_current_focus_state()
+        }
+
         try:
             if command == "env":
                 with open("env.json") as f:
@@ -86,38 +95,25 @@ def interact(model, messages):
                 for app in allowed_applications["apps"]:
                     res += app + "\n"
 
-                print(res)
                 messages.append({
-                    "role": "assistant",
+                    "role": "user",
                     "content": res
                 })
-
-            elif command == "view":
                 messages.append({
                     "role": "assistant",
-                    "content": f"view:\n{filter_applications(list_applications(False))}"
+                    "content": f"Applications\n{filter_applications(list_applications(False))}"
                 })
 
             elif command == "open":
                 app_pid = open_application(parts[1])
                 focus_window_by_pid(app_pid)
                 messages.append({
-                    "role": "assistant",
+                    "role": "user",
                     "content": f"Opened application. PID: {app_pid}"
                 })
 
             elif command == "run":
                 output = run_terminal_command(parts[1])
-
-                messages[1] = {
-                    "role": "system",
-                    "content": at_pm(elements)
-                }
-                messages[2] = {
-                    "role": "system",
-                    "content": get_current_focus_state()
-                }
-
                 messages.append({
                     "role": "user",
                     "content": f"Command output\n{output}"
@@ -146,17 +142,21 @@ def interact(model, messages):
                 x11_mouse.move_human(elem['location'][0], elem['location'][1])
                 x11_mouse.click()
 
-                messages[1] = {
-                    "role": "system",
-                    "content": at_pm(elements)
-                }
-                messages[2] = {
-                    "role": "system",
-                    "content": get_current_focus_state()
-                }
+                messages.append({
+                    "role": "user",
+                    "content": f"{command} [{elem['role']}-{elem['name']}]"
+                })
+
+            elif command == "dblclick":
+                idx = int(parts[1])
+                elem = elements[idx]
+
+                print(f"\nRight clicking: [{elem['role']}] {elem['name']}")
+                x11_mouse.move_human(elem['location'][0], elem['location'][1])
+                x11_mouse.double_click()
 
                 messages.append({
-                    "role": "assistant",
+                    "role": "user",
                     "content": f"{command} [{elem['role']}-{elem['name']}]"
                 })
 
@@ -168,31 +168,13 @@ def interact(model, messages):
                 x11_mouse.move_human(elem['location'][0], elem['location'][1])
                 x11_mouse.right_click()
 
-                messages[1] = {
-                    "role": "system",
-                    "content": at_pm(elements)
-                }
-                messages[2] = {
-                    "role": "system",
-                    "content": get_current_focus_state()
-                }
-
                 messages.append({
                     "role": "assistant",
-                    "content": choice
+                    "content": f"{command} [{elem['role']}-{elem['name']}]"
                 })
 
             elif command == "press":
                 x11_keyboard.press_combo(parts[1])
-
-                messages[1] = {
-                    "role": "system",
-                    "content": at_pm(elements)
-                }
-                messages[2] = {
-                    "role": "system",
-                    "content": get_current_focus_state()
-                }
 
                 messages.append({
                     "role": "assistant",
@@ -201,16 +183,6 @@ def interact(model, messages):
 
             elif command == "type":
                 x11_keyboard.type_text(parts[1])
-
-                messages[1] = {
-                    "role": "system",
-                    "content": at_pm(elements)
-                }
-                messages[2] = {
-                    "role": "system",
-                    "content": get_current_focus_state()
-                }
-
                 messages.append({
                     "role": "assistant",
                     "content": f"{command} {parts[1]}"
