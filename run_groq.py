@@ -8,8 +8,8 @@ import x11_mouse
 import x11_keyboard
 
 # Standard imports
-import os
 import json
+import time
 
 # Groq Import
 from groq import Groq
@@ -49,9 +49,15 @@ def interact(messages):
     while True:
         print("messagevar\n\n\n",messages[1],messages[2],"\n\n\nendmessage")
         
-        choice = generate_model_response(messages)
+        # choice = generate_model_response(messages)
+        choice = "click 66"
+        time.sleep(2)
         parts = choice.split(maxsplit=1)
-        command = parts[0].lower()
+        print(parts)
+        try:
+            command = parts[0].lower()
+        except IndexError:
+            continue
 
         if command == "end":
             print(f"From model: {parts[1]}")
@@ -60,6 +66,7 @@ def interact(messages):
         app_id = get_focused_window_pid()
         my_app = find_application_by_pid(app_id)
         elements = traverse_tree_interactive(my_app)
+        print(at_pm(elements))
 
         # Update the context messages at indices 1 and 2
         messages[1] = {
@@ -143,12 +150,16 @@ def interact(messages):
 
 # Bootstrap
 if __name__ == "__main__":
+    x11_mouse.init()
+    x11_keyboard.init()
+    print("X11 Input Systems Initialized.")
     messages = []
 
     with open("model_prompt.txt") as f:
         base_prompt = f.read()
 
     task_input = input("Enter your command: ")
+    time.sleep(2)
 
     # Setup Initial State
     messages.append({

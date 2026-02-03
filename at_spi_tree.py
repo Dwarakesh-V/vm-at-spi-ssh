@@ -140,7 +140,7 @@ def get_element_info(accessible, depth):
         # Get the location of the accessible element
         component = accessible.queryComponent()
         extents = component.getExtents(0)  # 0 for screen coordinates
-        location = (extents.x + 5, extents.y + 5)
+        location = (extents.x*1.333+5, extents.y*1.333+5)
         
         return {
             'name': name,

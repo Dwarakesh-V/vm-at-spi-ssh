@@ -74,9 +74,6 @@ def on_event(event):
         "app": app,
         "role": role,
         "name": name,
-        "text": text,
-        "desc": desc,
-        "label": label,
         "semantic": semantic,
     }
 

@@ -11,6 +11,8 @@ import x11_keyboard
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 
+import time
+
 def generate_model_response(model,tokenizer,messages):
     """Generate a response from the model"""
     # Apply chat template
@@ -48,6 +50,9 @@ def interact(model,tokenizer,messages):
     
     while True:
         choice = generate_model_response(model,tokenizer,messages)
+        print("isthought: ",choice[:7]=="THOUGHT",choice[:8])
+        if choice[:7]=="THOUGHT":
+            choice = choice.split("\n")[1][8:]
         parts = choice.split(maxsplit=1)
         command = parts[0].lower()
         if command=="end":
@@ -168,7 +173,7 @@ def interact(model,tokenizer,messages):
                         f"If you tried to open an app, first use 'env' to see available apps."
             })
 
-model_path = "./Phi-3-mini-4k-instruct"
+model_path = "./Llama-3.1-8B-Instruct"
 
 # Define the quantization configuration
 quant_config = BitsAndBytesConfig(
@@ -183,7 +188,7 @@ tokenizer = AutoTokenizer.from_pretrained(model_path)
 
 model = AutoModelForCausalLM.from_pretrained(
     model_path,
-    # quantization_config=quant_config, # Pass the config here
+    quantization_config=quant_config, # Pass the config here
     device_map="auto",
 )
 print("Model loaded successfully in 4-bit\n")
@@ -193,6 +198,7 @@ messages = []
 with open("model_prompt.txt") as f:
     base_prompt = f.read()
 command = input("Enter your command: ")
+time.sleep(2)
 messages.append({
     "role": "system",
     "content": base_prompt+"\n\nTask: "+command
