@@ -5,7 +5,6 @@ import pyatspi
 import subprocess
 import time
 import x11_keyboard
-from pytoony import json2toon
 import json
 from para_maker import at_pm
 x11_keyboard.init()
@@ -129,28 +128,22 @@ def traverse_tree_interactive(accessible, depth=0, max_depth=50):
     return interactive_elements
 
 def get_element_info(accessible, depth):
-    """Extract relevant information from any SINGLE accessible element"""
     try:
-        name = accessible.name or None
-        if not name:
-            return None
+        name = accessible.name or "Unnamed"
         role = accessible.getRoleName()
-        description = accessible.description or ""
+        description = accessible.description or "" 
         
-        # Get the location of the accessible element
         component = accessible.queryComponent()
-        extents = component.getExtents(0)  # 0 for screen coordinates
-        location = (extents.x*1.333+5, extents.y*1.333+5)
+        extents = component.getExtents(0) 
         
         return {
             'name': name,
             'role': role,
             'description': description,
             'depth': depth,
-            'location': location  # Store location + 5px offset
+            'location': ((extents.x*2)+10, (extents.y*2)+10), # Screen scaling and slight offset
         }
     except Exception as e:
-        print(f"Exception {e} has occurred")
         return None
 
 def is_visible_and_enabled(accessible):
