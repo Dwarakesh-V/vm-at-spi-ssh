@@ -49,9 +49,8 @@ def interact(messages):
     while True:
         print("messagevar\n\n\n",messages[1],messages[2],"\n\n\nendmessage")
         
-        # choice = generate_model_response(messages)
-        choice = "click 66"
-        time.sleep(2)
+        choice = generate_model_response(messages)
+        # choice = "env"
         parts = choice.split(maxsplit=1)
         print(parts)
         try:
@@ -66,7 +65,6 @@ def interact(messages):
         app_id = get_focused_window_pid()
         my_app = find_application_by_pid(app_id)
         elements = traverse_tree_interactive(my_app)
-        print(at_pm(elements))
 
         # Update the context messages at indices 1 and 2
         messages[1] = {
