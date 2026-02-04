@@ -10,12 +10,13 @@ import x11_keyboard
 # Standard imports
 import os
 import json
+import time
 
 # Gemini
 import google.generativeai as genai
 
 # Gemini setup
-genai.configure(api_key=os.environ["WEB_SCRAPE_PARSE_GEMKEY"])
+genai.configure(api_key=os.environ["GEMINI_API_KEY"])
 
 model = genai.GenerativeModel(
     model_name="gemini-2.5-flash",
@@ -204,12 +205,15 @@ def interact(model, messages):
             })
 
 # Bootstrap
+x11_mouse.init()
+x11_keyboard.init()
 messages = []
 
 with open("model_prompt.txt") as f:
     base_prompt = f.read()
 
 command = input("Enter your command: ")
+time.sleep(2)
 
 messages.append({
     "role": "system",

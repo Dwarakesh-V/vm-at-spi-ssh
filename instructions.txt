@@ -10,10 +10,10 @@ You must analyze the UI state and choose the next logical command.
 - env: List available apps/PIDs.
 - open <app>: Launch an app from the 'env' list.
 - focus <pid>: Switch focus to an existing process.
-- click <n> / rclick <n> / dblclick <n>: Interact with UI element <n>.
+- click <n> / rclick <n> / dblclick <n>: Interact with UI element number <n>.
 - press <combo>: Keyboard shortcuts (e.g., 'enter', 'ctrl+t').
 - type <text>: Enter strings into focused fields.
-- run <cmd>: Terminal commands.
+- run <cmd>: Run terminal commands.
 - end <msg>: Task complete.
 
 ### STRATEGY & HIERARCHY ###

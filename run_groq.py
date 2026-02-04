@@ -22,23 +22,23 @@ def generate_model_response(messages):
     completion = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=messages,
-        temperature=0.4,
+        temperature=0.7,
     )
 
     full_text = completion.choices[0].message.content.strip()
+    print(f"Full text: {full_text}")
     
-    # Logic to extract only the ACTION line
-    # This handles "ACTION: click 10" or just "click 10"
+    # Handle "ACTION: click 10" and just "click 10"
     lines = full_text.split('\n')
     action_line = [l for l in lines if l.startswith("ACTION:")]
     
     if action_line:
         final_command = action_line[0].replace("ACTION:", "").strip()
     else:
-        # Fallback if the model didn't follow formatting perfectly
+        # Fallback
         final_command = lines[-1].strip()
 
-    print(f"Model Thought: {full_text}") # Good for debugging
+    print(f"Model Thought: {full_text}") # Debug
     return final_command
 
 
@@ -153,7 +153,7 @@ if __name__ == "__main__":
     print("X11 Input Systems Initialized.")
     messages = []
 
-    with open("model_prompt.txt") as f:
+    with open("instructions.txt") as f:
         base_prompt = f.read()
 
     task_input = input("Enter your command: ")
@@ -167,5 +167,5 @@ if __name__ == "__main__":
     messages.append({"role": "system", "content": "UI State: None currently"})
     messages.append({"role": "system", "content": "Focus State: None currently"})
 
-    print("\nStarting Groq Interaction...\n")
+    print("\nExecuting action with groq...\n")
     interact(messages)

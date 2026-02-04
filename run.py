@@ -31,7 +31,7 @@ def generate_model_response(model,tokenizer,messages):
         **inputs,
         max_new_tokens=128,
         do_sample=True,          # Enable sampling
-        temperature=0.2,         # Add randomness
+        temperature=0.7,         # Add randomness
         top_p=0.9,              # Nucleus sampling
         pad_token_id=tokenizer.eos_token_id
     )
@@ -194,8 +194,12 @@ model = AutoModelForCausalLM.from_pretrained(
 print("Model loaded successfully in 4-bit\n")
 
 # IMPORTANT: messages[0] contains base prompt, messages[-2] contains currently focused application tree data, messages[-1] contains the focus, the messages in between contain model actions
+
+# This file does not have a main function because it is meant to be run directly
+x11_mouse.init()
+x11_keyboard.init()
 messages = []
-with open("model_prompt.txt") as f:
+with open("instructions.txt") as f:
     base_prompt = f.read()
 command = input("Enter your command: ")
 time.sleep(2)
