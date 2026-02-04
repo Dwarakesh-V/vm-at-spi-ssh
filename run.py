@@ -50,13 +50,17 @@ def interact(model,tokenizer,messages):
     
     while True:
         choice = generate_model_response(model,tokenizer,messages)
-        print("isthought: ",choice[:7]=="THOUGHT",choice[:8])
+        # print("isthought: ",choice[:7]=="THOUGHT",choice[:8])
         if choice[:7]=="THOUGHT":
-            choice = choice.split("\n")[1][8:]
+            choice = choice.split("\n")
+            print(choice[0])
+            choice=choice[1][8:]
+            print(choice)
         parts = choice.split(maxsplit=1)
         command = parts[0].lower()
         if command=="end":
             print(f"From model: {parts[1]}")
+            break
         
         app_id = get_focused_window_pid()
         my_app = find_application_by_pid(app_id)
@@ -71,7 +75,7 @@ def interact(model,tokenizer,messages):
             "content": get_current_focus_state()
         }
 
-        print(f"\n\nmessages:\n\n{messages[1]},\n{messages[2]}\n\n-----")
+        # print(f"\n\nmessages:\n\n{messages[1]},\n{messages[2]}\n\n-----")
         try:
             if command == "env": # VIEW ENVIRONMENTAL APPS
                 with open("env.json") as f:
@@ -140,6 +144,17 @@ def interact(model,tokenizer,messages):
                 print(f"\nRight clicking: [{elem['role']}] {elem['name']}")
                 x11_mouse.move_human(elem['location'][0],elem['location'][1])
                 x11_mouse.right_click()
+                messages.append({
+                    "role": "assistant",
+                    "content": choice
+                })
+
+            elif command == "dblclick":
+                idx = int(parts[1])
+                elem = elements[idx]
+                print(f"\nDouble clicking: [{elem['role']}] {elem['name']}")
+                x11_mouse.move_human(elem['location'][0],elem['location'][1])
+                x11_mouse.double_click()
                 messages.append({
                     "role": "assistant",
                     "content": choice
@@ -215,5 +230,4 @@ messages.append({
     "role": "assistant",
     "content": "None currently"
 })
-print("\n\n")
-interact(model,tokenizer,messages)
+interact("aaaa",tokenizer,messages)

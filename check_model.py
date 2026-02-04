@@ -47,9 +47,9 @@ def generate_response(messages):
     with torch.no_grad():
         outputs = model.generate(
             **inputs,
-            max_new_tokens=256,
+            max_new_tokens=128,
             do_sample=True,
-            temperature=0.7,
+            temperature=0.1,
             top_p=0.9,
             pad_token_id=tokenizer.eos_token_id
         )
@@ -74,10 +74,9 @@ while True:
     if not user_input:
         continue
     
+    messages.append({"role":"system","content":"You are a helpful AI assistant that gives answers directly with minimal explanation"})
     # Add user message to history
     messages.append({"role": "user", "content": user_input})
-
-
     
     # Generate response
     response = generate_response(messages) # Must be verfied and parsed.
