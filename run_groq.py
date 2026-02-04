@@ -64,7 +64,7 @@ def interact(messages):
 
         app_id = get_focused_window_pid()
         my_app = find_application_by_pid(app_id)
-        elements = traverse_tree_interactive(my_app)
+        elements = traverse_tree(my_app)
 
         # Update the context messages at indices 1 and 2
         messages[1] = {

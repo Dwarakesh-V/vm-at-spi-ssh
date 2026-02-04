@@ -12,6 +12,7 @@ import subprocess
 import time
 import argparse
 import sys
+import json
 
 # Initialize the virtual keyboard and mouse
 x11_keyboard.init()
@@ -78,6 +79,23 @@ def list_applications(disp_res=True):
     if disp_res:
         print()
     return applications
+
+def filter_applications(applications):
+    filtered_apps = []
+
+    with open("env.json") as f:
+        allowed_applications = json.load(f)
+
+    applications = list_applications(False)
+    for app in applications:
+        if app["name"] in allowed_applications["apps"]:
+            filtered_apps.append({"name":app["name"],"pid":app["pid"]})
+
+    apps = ""
+    for app_data in filtered_apps:
+        apps+= f"{app_data['name']}-{app_data['pid']}\n"
+
+    return apps
 
 def find_application_by_pid(pid, timeout=10):
     """Find application by process ID with a 10 second timeout"""
@@ -246,6 +264,19 @@ def traverse_tree(accessible, depth=0, max_depth=50):
         pass
     
     return elements
+
+def run_terminal_command(command):
+    result = subprocess.run(
+        command,
+        shell=True,
+        capture_output=True,
+        text=True
+    )
+
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr.strip())
+
+    return result.stdout.strip()
 
 # ---------- EVERYTHING AFTER THIS PART IS ONLY FOR DEBUGGING AND VISUALIZATION ---------- #
 # ---------------------------------------------------------------------------------------- #

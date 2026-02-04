@@ -60,7 +60,7 @@ def interact(model,tokenizer,messages):
         
         app_id = get_focused_window_pid()
         my_app = find_application_by_pid(app_id)
-        elements = traverse_tree_interactive(my_app) # This is done repeatedly to ensure that UI update changes are reflected, and indexing errors are avoided
+        elements = traverse_tree(my_app) # This is done repeatedly to ensure that UI update changes are reflected, and indexing errors are avoided
 
         messages[1]={
             "role": "system",
