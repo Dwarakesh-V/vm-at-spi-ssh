@@ -50,6 +50,7 @@ def interact(model,tokenizer,messages):
     
     while True:
         choice = generate_model_response(model,tokenizer,messages)
+        time.sleep(1)
         # print("isthought: ",choice[:7]=="THOUGHT",choice[:8])
         if choice[:7]=="THOUGHT":
             choice = choice.split("\n")
@@ -201,11 +202,11 @@ quant_config = BitsAndBytesConfig(
 print("Loading quantized model and tokenizer...")
 tokenizer = AutoTokenizer.from_pretrained(model_path)
 
-model = AutoModelForCausalLM.from_pretrained(
-    model_path,
-    quantization_config=quant_config, # Pass the config here
-    device_map="auto",
-)
+# model = AutoModelForCausalLM.from_pretrained(
+#     model_path,
+#     quantization_config=quant_config, # Pass the config here
+#     device_map="auto",
+# )
 print("Model loaded successfully in 4-bit\n")
 
 # IMPORTANT: messages[0] contains base prompt, messages[-2] contains currently focused application tree data, messages[-1] contains the focus, the messages in between contain model actions

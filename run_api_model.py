@@ -65,7 +65,6 @@ def interact(model, messages):
     """Interactive mode to explore and interact with elements"""
 
     while True:
-        print("messagevar\n\n\n",messages[1],messages[2],"\n\n\nendmessage")
         choice = generate_model_response(model, messages)
         # choice = "focus 10760"
         parts = choice.split(maxsplit=1)

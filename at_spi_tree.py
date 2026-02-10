@@ -431,6 +431,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     app = None
+    time.sleep(4)
     if args.open:
         pid = open_application(args.open)
         app = find_application_by_pid(pid)
