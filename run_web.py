@@ -21,6 +21,7 @@ def interact(prompt,model):
     """Interactive mode to explore and interact with elements"""
     
     while True:
+        time.sleep(1)
         choice = asyncio.run(rcv_web_int(model,prompt))
         print(choice)
         if choice[:7]=="THOUGHT":
@@ -111,6 +112,12 @@ def interact(prompt,model):
 
 x11_mouse.init()
 x11_keyboard.init()
+
+elementsf,parse = cur_state()
+cur_focus = get_current_focus_state()
+focused_all = parse+"\n"+cur_focus
+
 command = input("Enter your command: ")
+
 model = "chatgpt"
-interact(command,model)
+interact(f"Master command: {command}\nState:\n{focused_all}",model)
