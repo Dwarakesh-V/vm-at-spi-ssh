@@ -23,6 +23,7 @@ def interact(prompt,model):
     while True:
         time.sleep(1)
         choice = asyncio.run(rcv_web_int(model,prompt))
+        # choice = "dblclick 88"
         print(choice)
         if choice[:7]=="THOUGHT":
             choice = choice.split("\n")
@@ -36,7 +37,8 @@ def interact(prompt,model):
             break
         
         elementsf,parse = cur_state()
-        cur_focus = get_current_focus_state()
+        print(elementsf,parse)
+        cur_focus = str(get_current_focus_state())
         focused_all = parse+"\n"+cur_focus
 
         try:
@@ -47,10 +49,7 @@ def interact(prompt,model):
                 res=""
                 for app in allowed_applications["apps"]:
                     res+=app+"\n"
-                prompt = res
-
-            elif command == "view": # VIEW APPLICATIONS
-                prompt = f"view:\n{filter_applications(list_applications(False))}"
+                prompt = res+"\nCurrently opened apps:"+f"\n{filter_applications(list_applications(False))}"
 
             elif command == "open": # OPEN AN APPLICATION
                 app_pid=open_application(parts[1])
@@ -59,7 +58,7 @@ def interact(prompt,model):
 
             elif command == "run": # RUN TERMINAL COMMAND AND RETRIEVE OUTPUT
                 output = run_terminal_command(parts[1])
-                prompt = output
+                prompt = output+"\n"+focused_all
 
             elif command == "focus": # FOCUS ON APPLICATION
                 idx=int(parts[1])
@@ -113,11 +112,11 @@ def interact(prompt,model):
 x11_mouse.init()
 x11_keyboard.init()
 
-elementsf,parse = cur_state()
-cur_focus = get_current_focus_state()
-focused_all = parse+"\n"+cur_focus
-
 command = input("Enter your command: ")
+time.sleep(3)
+elementsf,parse = cur_state()
+cur_focus = str(get_current_focus_state())
+focused_all = parse+"\n"+cur_focus
 
 model = "chatgpt"
 interact(f"Master command: {command}\nState:\n{focused_all}",model)
