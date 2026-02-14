@@ -126,7 +126,7 @@ def find_application_by_name(app_name):
             continue
     return None
 
-def open_application(command, wait_time=2):
+def open_application(command, wait_time=1):
     """Open an application using Popen"""
     print(f"Opening application: {command}")
     
@@ -232,7 +232,7 @@ def get_element_info(accessible, depth): # Single element data acquisition
             'role': role,
             'description': full_description,
             'depth': depth,
-            'location': ((extents.x*2)+10, (extents.y*2)+10),
+            'location': ((extents.x*2)+10, (extents.y*2)-20),
         }
     except Exception as e:
         return None

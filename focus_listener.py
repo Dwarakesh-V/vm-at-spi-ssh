@@ -34,6 +34,6 @@ def get_current_focus_state():
 
 if __name__ == "__main__":
     print("Getting current state in 2 seconds...")
-    sleep(2)
+    sleep(3)
     state = get_current_focus_state()
     print(state)

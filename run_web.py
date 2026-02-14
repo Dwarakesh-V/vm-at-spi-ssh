@@ -23,8 +23,6 @@ def interact(prompt,model):
     while True:
         time.sleep(1)
         choice = asyncio.run(rcv_web_int(model,prompt))
-        
-        # choice = "dblclick 88"
         print(choice)
         if choice[:7]=="THOUGHT":
             choice = choice.split("\n")
