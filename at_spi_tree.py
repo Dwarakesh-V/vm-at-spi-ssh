@@ -193,7 +193,7 @@ def is_relevant_element(accessible):
     except:
         return False
 
-def get_element_info(accessible, depth):
+def get_element_info(accessible, depth): # Single element data acquisition
     try:
         # Use our new helper to get the real text
         name = get_text_content(accessible)

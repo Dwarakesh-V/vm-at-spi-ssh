@@ -4,6 +4,7 @@ gi.require_version("Gio", "2.0")
 from gi.repository import Atspi, GLib, Gio
 import json
 
+# Create a D-Bus service to capture new focus on event
 BUS_NAME = "org.vmatspissh.FocusWatcher"
 OBJ_PATH = "/org/example/FocusWatcher"
 IFACE_NAME = "org.vmatspissh.FocusWatcher"

@@ -8,7 +8,7 @@ INPUT DATA
 
 COMMAND SET
 - env: List available apps/PIDs, and the currently opened applications
-- open <app>: Launch an app from the 'env' list
+- open <app>: Launch a new instance of an app from the 'env' list - MUST be there in AVAILABLE APPLICATIONS
 - run <command>: Run a terminal command and get the output
 - focus <pid>: Switch focus to an existing process.
 - request <message>: Request additional information from the user side, like username. Do not use this to get system information like a tree
@@ -16,6 +16,16 @@ COMMAND SET
 - press <combo>: Keyboard shortcuts (e.g., 'enter', 'ctrl+t')
 - type <text>: Enter strings into focused fields
 - end <msg>: Task complete
+
+AVAILABLE APPLICATIONS - These are the only applications that you can use.
+Firefox,
+qalculate-gtk,
+io.github.quodlibet.QuodLibet,
+code,
+mousepad,
+soffice,
+Thunar,
+xfce4-screenshooter
 
 STRATEGY & HIERARCHY
 1. INITIALIZATION: If UI Tree is "None currently", you MUST use 'env' or 'focus <pid>' to gather context

@@ -23,6 +23,7 @@ def interact(prompt,model):
     while True:
         time.sleep(1)
         choice = asyncio.run(rcv_web_int(model,prompt))
+        
         # choice = "dblclick 88"
         print(choice)
         if choice[:7]=="THOUGHT":
@@ -30,8 +31,14 @@ def interact(prompt,model):
             print(f"THOUGHT: <{choice[0]}>")
             choice=choice[1][8:]
             print(f"ACTION: <{choice}>")
-        parts = choice.split(maxsplit=1)
+
+        # Normalize model output
+        lines = [l.strip() for l in choice.splitlines() if l.strip()]
+        normalized = " ".join(lines)
+
+        parts = normalized.split(maxsplit=1)
         command = parts[0].lower()
+
         if command=="end":
             print(f"From model: {parts[1]}")
             break
