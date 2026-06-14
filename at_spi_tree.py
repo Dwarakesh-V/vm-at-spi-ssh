@@ -3,8 +3,8 @@
 
 # Custom
 import pyatspi
-import x11_keyboard
-import x11_mouse
+# import x11_keyboard
+# import x11_mouse
 from para_maker import at_pm
 
 # Built-in
@@ -15,8 +15,8 @@ import sys
 import json
 
 # Initialize the virtual keyboard and mouse
-x11_keyboard.init()
-x11_mouse.init()
+# x11_keyboard.init()
+# x11_mouse.init()
 
 def focus_window_by_pid(pid: int) -> None:
     search = subprocess.run(
@@ -145,6 +145,11 @@ def open_application(command, wait_time=1):
 # Accessibility tree elements
 def get_text_content(accessible):
     """Helper to get text from the Text interface if Name is empty"""
+    try:
+        editable = accessible.queryEditableText()
+        print("Editable!")
+    except:
+        print("Not editable")
     try:
         if accessible.name and accessible.name.strip():
             return accessible.name
@@ -365,15 +370,15 @@ def interactive_mode(elements):
             parts = choice.split(maxsplit=1)
             command = parts[0].lower()
             
-            if command == 'type':
-                if len(parts) > 1:
-                    x11_keyboard.type_text(parts[1])
-                continue
+            # if command == 'type':
+            #     if len(parts) > 1:
+            #         x11_keyboard.type_text(parts[1])
+            #     continue
                 
-            if command == 'press':
-                if len(parts) > 1:
-                    x11_keyboard.press_combo(parts[1])
-                continue
+            # if command == 'press':
+            #     if len(parts) > 1:
+            #         x11_keyboard.press_combo(parts[1])
+            #     continue
 
             # Index-based commands
             if len(parts) < 2:
@@ -462,4 +467,4 @@ if __name__ == "__main__":
     else:
         print("Application not found.")
 
-    x11_keyboard.cleanup()
+    # x11_keyboard.cleanup()

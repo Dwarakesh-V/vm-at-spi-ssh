@@ -1,1 +1,0 @@
-ISO files that are run in the VM are read from this folder.
